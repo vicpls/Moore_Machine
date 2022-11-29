@@ -52,7 +52,7 @@ afterEvaluate {
                 from components.release
                 groupId = 'com.github.vicpls'
                 artifactId = 'moore-machine'
-                version = '0.1-rc'
+                version = '0.1'
             }
         }
     }
