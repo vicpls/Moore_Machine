@@ -16,7 +16,12 @@ class MooreMachine <T,R> {
      * Current state of machine.
      */
     var currentState: T? = null
-    private set
+    private set(value){
+        field = value
+        onNewState?.invoke(value)
+    }
+
+    var onNewState: ((state: T?)->Unit)? = null
 
     private var logBuffer: MutableList<String>? = null
 
@@ -39,22 +44,7 @@ class MooreMachine <T,R> {
         }
 
 
-    private var transitions: ArrayList<Transition<T,R>> = ArrayList(0)
-
-    /**
-     * The record of state-transition table
-     * @param curState current state
-     * @param signal inputs
-     * @param newState next State
-     */
-    data class Transition <T, R> (
-        internal val curState: T,
-        internal val signal: R,
-        internal val newState: T
-    ) {
-        override fun toString(): String
-            = "$curState($signal)=$newState\n"
-    }
+    private var transitions: MutableList<Transition<T,R>> = ArrayList(0)
 
     /**
      * Create a transition and add to table.
@@ -62,7 +52,7 @@ class MooreMachine <T,R> {
     fun addTransition(curState: T, signal: R, newState: T){
         val newTransition = Transition(curState, signal, newState)
         transitions += newTransition
-        log(Action.ADD_TRANSI, newTransition)
+        log(Action.ADD_TRANS, newTransition)
     }
 
     /**
@@ -70,7 +60,7 @@ class MooreMachine <T,R> {
      */
     fun addAllTransition(transition: List<Transition<T, R>>){
         transitions += transition
-        log(Action.ADD_TRANSI, "$transition\n")
+        log(Action.ADD_TRANS, "$transition\n")
     }
 
     /**
@@ -90,13 +80,42 @@ class MooreMachine <T,R> {
      *
      * @param signal input influence
      * @return new state of machine
+     * @throws IllegalStateException in case of class was not initialised
      */
     fun act(signal: R): T{
         if (currentState == null) throw IllegalStateException("Class is not initialised.")
 
         synchronized(currentState!!) {
-            transitions.firstOrNull { it.curState == currentState && it.signal == signal }
+            transitions
+                .firstOrNull { it.curState == currentState && it.signal == signal }
                 ?.let {
+                    currentState = it.newState
+                    log(Action.ACT, it)
+                }
+        }
+
+        return currentState!!
+    }
+
+    /**
+     * Do the transition of machine.
+     *
+     * if the inputs cannot be find in the transition table then throw [NoSuchElementException].
+     * if a few record match a pair of current state and signal then acts first record in table.
+     * The Transient table can be verified by method [verify].
+     *
+     * @param signal input influence
+     * @return new state of machine
+     * @throws IllegalStateException in case of class was not initialised
+     */
+    @Suppress("unused")
+    fun actOrException(signal: R): T{
+        if (currentState == null) throw IllegalStateException("Class is not initialised.")
+
+        synchronized(currentState!!) {
+            transitions
+                .first { it.curState == currentState && it.signal == signal }
+                .let {
                     currentState = it.newState
                     log(Action.ACT, it)
                 }
@@ -116,6 +135,7 @@ class MooreMachine <T,R> {
      * Return the n-last string of log.
      * @param last quantity of last strings in a log
      */
+    @Suppress("unused")
     fun getLog(last: Int): List<String>? {
         return logBuffer?.takeLast(last)
     }
@@ -186,7 +206,7 @@ class MooreMachine <T,R> {
     private enum class Action {
         INIT,
         ACT,
-        ADD_TRANSI
+        ADD_TRANS
     }
 
 }

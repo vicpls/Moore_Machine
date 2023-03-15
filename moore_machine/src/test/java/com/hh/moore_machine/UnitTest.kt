@@ -1,23 +1,16 @@
 package com.hh.moore_machine
 
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Test
-
-import org.junit.Assert.*
 
 class UnitTest {
 
-    private val tr = arrayOf(
-        MooreMachine.Transition(1, 1, 2),
-        MooreMachine.Transition(1, 2, 3),
-        MooreMachine.Transition(2, 1, 5),
-        MooreMachine.Transition(2, 2, 6),
-        MooreMachine.Transition(5, 1, 1),
-        MooreMachine.Transition(5, 5, 5)
-    ).toList()
+
 
     private val machine = MooreMachine<Int, Int>()
         .also {
-            it.addAllTransition(tr)
+            it.addAllTransition(Util.tr)
             it.init(1)
         }
 
@@ -57,7 +50,7 @@ class UnitTest {
     @Test
     fun verifyCopyTest() {
         val mM = MooreMachine<Int, Int>()
-        mM.addAllTransition(tr)
+        mM.addAllTransition(Util.tr)
         mM.init(1)
         assert(machine.verify(1))
 
@@ -68,7 +61,7 @@ class UnitTest {
     @Test
     fun verifyAmbiguityTest() {
         val mM = MooreMachine<Int, Int>()
-        mM.addAllTransition(tr)
+        mM.addAllTransition(Util.tr)
         mM.init(1)
         assert(mM.verify(1))
 
